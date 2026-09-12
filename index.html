@@ -85,6 +85,11 @@
       color: white;
     }
 
+    .blue {
+      background: #2878e8;
+      color: white;
+    }
+
     .gray {
       background: #444c59;
       color: white;
@@ -122,6 +127,20 @@
     .event {
       padding: 10px;
       border-bottom: 1px solid #303846;
+    }
+
+    .panic-location {
+      margin-top: 10px;
+      padding: 12px;
+      background: #1b1f27;
+      border: 1px solid #e52b2b;
+      border-radius: 10px;
+    }
+
+    .panic-location a {
+      color: #55aaff;
+      font-weight: bold;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -175,6 +194,7 @@
     </button>
 
     <h2>Event Log</h2>
+
     <div id="dashboardEvents">
       <div class="event">Dashboard started.</div>
     </div>
@@ -213,6 +233,7 @@
     </div>
 
     <h2>Phone Events</h2>
+
     <div id="phoneEvents">
       <div class="event">Phone ready.</div>
     </div>
@@ -311,7 +332,9 @@ function startDashboard() {
 
     document.getElementById("roomCode").textContent = id;
 
-    addDashboardEvent("Dashboard connection ready.");
+    addDashboardEvent(
+      "Dashboard connection ready."
+    );
 
   });
 
@@ -320,19 +343,64 @@ function startDashboard() {
 
     connection = conn;
 
-    addDashboardEvent("Phone connected.");
+    addDashboardEvent(
+      "Phone connected."
+    );
 
     connection.on("open", function() {
 
       connection.on("data", function(data) {
 
+        /* PANIC ALERT */
+
         if (data.type === "panic") {
 
-          alert("🚨 PANIC ALERT FROM PHONE 🚨");
+          alert(
+            "🚨 PANIC ALERT FROM PHONE 🚨"
+          );
 
           addDashboardEvent(
             "🚨 PANIC ALERT RECEIVED"
           );
+
+          if (
+            typeof data.latitude === "number" &&
+            typeof data.longitude === "number"
+          ) {
+
+            const latitude = data.latitude;
+            const longitude = data.longitude;
+
+            const mapsLink =
+              `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+            const box =
+              document.getElementById("dashboardEvents");
+
+            const locationEvent =
+              document.createElement("div");
+
+            locationEvent.className =
+              "event panic-location";
+
+            locationEvent.innerHTML = `
+              🚨 <strong>PHONE LOCATION</strong><br><br>
+              Latitude: ${latitude}<br>
+              Longitude: ${longitude}<br><br>
+              <a href="${mapsLink}" target="_blank">
+                📍 OPEN LOCATION IN GOOGLE MAPS
+              </a>
+            `;
+
+            box.prepend(locationEvent);
+
+          } else {
+
+            addDashboardEvent(
+              "⚠️ Panic alert received, but location was unavailable."
+            );
+
+          }
 
         }
 
@@ -408,7 +476,9 @@ function connectPhone() {
 
   if (!code) {
 
-    alert("Enter the Mac connection code.");
+    alert(
+      "Enter the Mac connection code."
+    );
 
     return;
 
@@ -447,7 +517,9 @@ function connectPhone() {
 
   connection.on("error", function(error) {
 
-    alert("Could not connect to Mac.");
+    alert(
+      "Could not connect to Mac."
+    );
 
     console.log(error);
 
@@ -561,32 +633,109 @@ function stopCamera() {
 
 
 /* -------------------------
-   PANIC
+   PANIC + LOCATION
 ------------------------- */
 
 function panicAlert() {
 
-  if (connection && connection.open) {
-
-    connection.send({
-      type: "panic"
-    });
-
-    alert(
-      "🚨 PANIC ALERT SENT TO MAC 🚨"
-    );
-
-    addPhoneEvent(
-      "🚨 PANIC ALERT SENT"
-    );
-
-  } else {
+  if (!connection || !connection.open) {
 
     alert(
       "Phone is not connected to the Mac."
     );
 
+    return;
+
   }
+
+
+  if (!navigator.geolocation) {
+
+    alert(
+      "This phone does not support location services."
+    );
+
+    return;
+
+  }
+
+
+  addPhoneEvent(
+    "🚨 Panic pressed. Getting location..."
+  );
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    function(position) {
+
+      const latitude =
+        position.coords.latitude;
+
+      const longitude =
+        position.coords.longitude;
+
+
+      connection.send({
+
+        type: "panic",
+
+        latitude: latitude,
+
+        longitude: longitude
+
+      });
+
+
+      alert(
+        "🚨 PANIC ALERT SENT TO MAC\n📍 Location sent."
+      );
+
+
+      addPhoneEvent(
+        "🚨 PANIC ALERT SENT WITH LOCATION"
+      );
+
+    },
+
+    function(error) {
+
+      console.log(error);
+
+
+      connection.send({
+
+        type: "panic",
+
+        latitude: null,
+
+        longitude: null
+
+      });
+
+
+      alert(
+        "🚨 PANIC ALERT SENT\n⚠️ Location could not be obtained."
+      );
+
+
+      addPhoneEvent(
+        "🚨 PANIC ALERT SENT — LOCATION UNAVAILABLE"
+      );
+
+    },
+
+    {
+
+      enableHighAccuracy: true,
+
+      timeout: 10000,
+
+      maximumAge: 0
+
+    }
+
+  );
 
 }
 
@@ -600,12 +749,16 @@ function sendWarning() {
   if (connection && connection.open) {
 
     connection.send({
+
       type: "warning"
+
     });
+
 
     alert(
       "⚠️ ALERT SENT TO PHONE"
     );
+
 
     addDashboardEvent(
       "⚠️ Suspicious activity alert sent."
@@ -636,11 +789,14 @@ function disconnectPhone() {
 
   }
 
+
   document.getElementById("remoteVideo").srcObject =
     null;
 
+
   document.getElementById("status").textContent =
     "● Phone Disconnected";
+
 
   addDashboardEvent(
     "Phone disconnected."
