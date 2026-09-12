@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Body Cam Control</title>
+  <title>Body Cam System</title>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
   <style>
     * {
@@ -24,21 +26,22 @@
       border-bottom: 1px solid #303846;
     }
 
-    header h1 {
+    h1 {
       margin: 0;
-      font-size: 24px;
-    }
-
-    .status {
-      margin-top: 8px;
-      color: #35e875;
-      font-size: 14px;
     }
 
     main {
-      max-width: 900px;
+      max-width: 950px;
       margin: auto;
       padding: 20px;
+    }
+
+    .panel {
+      background: #111720;
+      border: 1px solid #303846;
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
     }
 
     .camera-box {
@@ -47,83 +50,78 @@
       border-radius: 15px;
       overflow: hidden;
       aspect-ratio: 16 / 9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     video {
       width: 100%;
       height: 100%;
       object-fit: cover;
-    }
-
-    .buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 20px;
+      background: #000;
     }
 
     button {
+      width: 100%;
       border: none;
       border-radius: 12px;
-      padding: 18px;
+      padding: 16px;
+      margin-top: 10px;
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
     }
 
-    .start {
-      background: #1fc866;
+    .green {
+      background: #20c866;
       color: white;
     }
 
-    .stop {
-      background: #444c59;
-      color: white;
-    }
-
-    .panic {
+    .red {
       background: #e52b2b;
       color: white;
     }
 
-    .alert {
+    .orange {
       background: #e69b18;
       color: white;
     }
 
-    .log {
-      margin-top: 25px;
-      background: #111720;
-      border: 1px solid #303846;
-      border-radius: 15px;
-      padding: 18px;
+    .gray {
+      background: #444c59;
+      color: white;
     }
 
-    .log h2 {
-      margin-top: 0;
+    input {
+      width: 100%;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #555;
+      background: #080b10;
+      color: white;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    .code {
+      font-size: 30px;
+      font-weight: bold;
+      text-align: center;
+      letter-spacing: 5px;
+      margin: 15px;
+    }
+
+    .status {
+      text-align: center;
+      margin-top: 10px;
+      color: #35e875;
+    }
+
+    .hidden {
+      display: none;
     }
 
     .event {
       padding: 10px;
       border-bottom: 1px solid #303846;
-      font-size: 14px;
-    }
-
-    .event:last-child {
-      border-bottom: none;
-    }
-
-    @media (max-width: 600px) {
-      .buttons {
-        grid-template-columns: 1fr;
-      }
-
-      header h1 {
-        font-size: 20px;
-      }
     }
   </style>
 </head>
@@ -131,129 +129,522 @@
 <body>
 
 <header>
-  <h1>🎥 BODY CAM CONTROL</h1>
-  <div class="status" id="status">● Camera Offline</div>
+  <h1>🎥 BODY CAM SYSTEM</h1>
+  <div class="status" id="status">Connecting...</div>
 </header>
 
 <main>
 
-  <div class="camera-box">
-    <video id="camera" autoplay playsinline></video>
+  <!-- MODE SELECTION -->
+
+  <div class="panel" id="modePanel">
+
+    <h2>Choose Device</h2>
+
+    <button class="green" onclick="openDashboard()">
+      💻 MAC DASHBOARD
+    </button>
+
+    <button class="gray" onclick="openBodyCam()">
+      📱 PHONE BODY CAM
+    </button>
+
   </div>
 
-  <div class="buttons">
 
-    <button class="start" onclick="startCamera()">
+  <!-- MAC DASHBOARD -->
+
+  <div class="panel hidden" id="dashboard">
+
+    <h2>💻 Mac Dashboard</h2>
+
+    <p>Give this connection code to the phone:</p>
+
+    <div class="code" id="roomCode">Connecting...</div>
+
+    <div class="camera-box">
+      <video id="remoteVideo" autoplay playsinline></video>
+    </div>
+
+    <button class="orange" onclick="sendWarning()">
+      ⚠️ SEND SUSPICIOUS ACTIVITY ALERT
+    </button>
+
+    <button class="red" onclick="disconnectPhone()">
+      ⛔ DISCONNECT PHONE
+    </button>
+
+    <h2>Event Log</h2>
+    <div id="dashboardEvents">
+      <div class="event">Dashboard started.</div>
+    </div>
+
+  </div>
+
+
+  <!-- PHONE -->
+
+  <div class="panel hidden" id="phone">
+
+    <h2>📱 Phone Body Cam</h2>
+
+    <p>Enter the code shown on the Mac:</p>
+
+    <input id="codeInput" maxlength="20" placeholder="Enter Mac code">
+
+    <button class="green" onclick="connectPhone()">
+      🔗 CONNECT TO MAC
+    </button>
+
+    <button class="green" onclick="startCamera()">
       📷 START BODY CAM
     </button>
 
-    <button class="stop" onclick="stopCamera()">
+    <button class="gray" onclick="stopCamera()">
       ⏹ STOP CAMERA
     </button>
 
-    <button class="panic" onclick="panicAlert()">
+    <button class="red" onclick="panicAlert()">
       🚨 PANIC ALERT
     </button>
 
-    <button class="alert" onclick="suspiciousAlert()">
-      ⚠️ SUSPICIOUS ACTIVITY
-    </button>
-
-  </div>
-
-  <div class="log">
-    <h2>Event Log</h2>
-    <div id="events">
-      <div class="event">System ready.</div>
+    <div class="camera-box">
+      <video id="localVideo" autoplay playsinline muted></video>
     </div>
+
+    <h2>Phone Events</h2>
+    <div id="phoneEvents">
+      <div class="event">Phone ready.</div>
+    </div>
+
   </div>
 
 </main>
 
+
 <script>
 
+let peer = null;
+let connection = null;
 let stream = null;
+let currentCall = null;
 
-function addEvent(message) {
-  const events = document.getElementById("events");
+
+/* -------------------------
+   EVENT LOG
+------------------------- */
+
+function addDashboardEvent(message) {
+
+  const box = document.getElementById("dashboardEvents");
 
   const event = document.createElement("div");
+
   event.className = "event";
 
-  const time = new Date().toLocaleTimeString();
+  event.textContent =
+    new Date().toLocaleTimeString() + " — " + message;
 
-  event.textContent = time + " — " + message;
-
-  events.prepend(event);
+  box.prepend(event);
 }
+
+
+function addPhoneEvent(message) {
+
+  const box = document.getElementById("phoneEvents");
+
+  const event = document.createElement("div");
+
+  event.className = "event";
+
+  event.textContent =
+    new Date().toLocaleTimeString() + " — " + message;
+
+  box.prepend(event);
+}
+
+
+/* -------------------------
+   MODE SELECTION
+------------------------- */
+
+function openDashboard() {
+
+  document.getElementById("modePanel").classList.add("hidden");
+
+  document.getElementById("dashboard").classList.remove("hidden");
+
+  document.getElementById("status").textContent =
+    "● Dashboard Online";
+
+  startDashboard();
+
+}
+
+
+function openBodyCam() {
+
+  document.getElementById("modePanel").classList.add("hidden");
+
+  document.getElementById("phone").classList.remove("hidden");
+
+  document.getElementById("status").textContent =
+    "● Body Cam Ready";
+
+  startPhone();
+
+}
+
+
+/* -------------------------
+   MAC DASHBOARD
+------------------------- */
+
+function startDashboard() {
+
+  const roomCode =
+    Math.random().toString(36).substring(2, 10).toUpperCase();
+
+  peer = new Peer(roomCode);
+
+  peer.on("open", function(id) {
+
+    document.getElementById("roomCode").textContent = id;
+
+    addDashboardEvent("Dashboard connection ready.");
+
+  });
+
+
+  peer.on("connection", function(conn) {
+
+    connection = conn;
+
+    addDashboardEvent("Phone connected.");
+
+    connection.on("open", function() {
+
+      connection.on("data", function(data) {
+
+        if (data.type === "panic") {
+
+          alert("🚨 PANIC ALERT FROM PHONE 🚨");
+
+          addDashboardEvent(
+            "🚨 PANIC ALERT RECEIVED"
+          );
+
+        }
+
+      });
+
+    });
+
+  });
+
+
+  peer.on("call", function(call) {
+
+    currentCall = call;
+
+    call.answer();
+
+    call.on("stream", function(remoteStream) {
+
+      document.getElementById("remoteVideo").srcObject =
+        remoteStream;
+
+      document.getElementById("status").textContent =
+        "● PHONE CAMERA LIVE";
+
+      addDashboardEvent(
+        "Live phone camera connected."
+      );
+
+    });
+
+  });
+
+
+  peer.on("error", function(error) {
+
+    console.log(error);
+
+    document.getElementById("status").textContent =
+      "● Connection Error";
+
+  });
+
+}
+
+
+/* -------------------------
+   PHONE
+------------------------- */
+
+function startPhone() {
+
+  peer = new Peer();
+
+  peer.on("open", function() {
+
+    addPhoneEvent(
+      "Phone connection ready."
+    );
+
+  });
+
+}
+
+
+/* -------------------------
+   CONNECT PHONE
+------------------------- */
+
+function connectPhone() {
+
+  const code =
+    document.getElementById("codeInput").value.trim();
+
+  if (!code) {
+
+    alert("Enter the Mac connection code.");
+
+    return;
+
+  }
+
+  connection = peer.connect(code);
+
+  connection.on("open", function() {
+
+    document.getElementById("status").textContent =
+      "● CONNECTED TO MAC";
+
+    addPhoneEvent(
+      "Connected to Mac dashboard."
+    );
+
+  });
+
+
+  connection.on("data", function(data) {
+
+    if (data.type === "warning") {
+
+      alert(
+        "⚠️ SUSPICIOUS ACTIVITY ALERT FROM DASHBOARD"
+      );
+
+      addPhoneEvent(
+        "⚠️ Suspicious activity alert received."
+      );
+
+    }
+
+  });
+
+
+  connection.on("error", function(error) {
+
+    alert("Could not connect to Mac.");
+
+    console.log(error);
+
+  });
+
+}
+
+
+/* -------------------------
+   PHONE CAMERA
+------------------------- */
 
 async function startCamera() {
 
   try {
 
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: "environment"
-      },
-      audio: true
-    });
+    stream =
+      await navigator.mediaDevices.getUserMedia({
 
-    document.getElementById("camera").srcObject = stream;
+        video: {
+          facingMode: {
+            ideal: "environment"
+          }
+        },
+
+        audio: true
+
+      });
+
+
+    document.getElementById("localVideo").srcObject =
+      stream;
+
 
     document.getElementById("status").textContent =
       "● BODY CAM ONLINE";
 
-    document.getElementById("status").style.color =
-      "#35e875";
 
-    addEvent("Body camera started.");
-
-  } catch (error) {
-
-    alert(
-      "Camera access was blocked. Please allow camera and microphone access."
+    addPhoneEvent(
+      "Body camera started."
     );
 
-    addEvent("Camera permission denied.");
+
+    if (connection && connection.open) {
+
+      const call =
+        peer.call(
+          connection.peer,
+          stream
+        );
+
+      currentCall = call;
+
+      addPhoneEvent(
+        "Sending live camera to Mac."
+      );
+
+    } else {
+
+      alert(
+        "Connect to the Mac first."
+      );
+
+    }
 
   }
+
+  catch (error) {
+
+    console.log(error);
+
+    alert(
+      "Camera permission was denied. Please allow camera and microphone access."
+    );
+
+  }
+
 }
+
+
+/* -------------------------
+   STOP CAMERA
+------------------------- */
 
 function stopCamera() {
 
   if (stream) {
 
-    stream.getTracks().forEach(track => track.stop());
+    stream.getTracks().forEach(
+      track => track.stop()
+    );
 
     stream = null;
 
-    document.getElementById("camera").srcObject = null;
+  }
 
-    document.getElementById("status").textContent =
-      "● Camera Offline";
 
-    document.getElementById("status").style.color =
-      "#ff5555";
+  document.getElementById("localVideo").srcObject =
+    null;
 
-    addEvent("Body camera stopped.");
+
+  document.getElementById("status").textContent =
+    "● Camera Offline";
+
+
+  addPhoneEvent(
+    "Body camera stopped."
+  );
+
+}
+
+
+/* -------------------------
+   PANIC
+------------------------- */
+
+function panicAlert() {
+
+  if (connection && connection.open) {
+
+    connection.send({
+      type: "panic"
+    });
+
+    alert(
+      "🚨 PANIC ALERT SENT TO MAC 🚨"
+    );
+
+    addPhoneEvent(
+      "🚨 PANIC ALERT SENT"
+    );
+
+  } else {
+
+    alert(
+      "Phone is not connected to the Mac."
+    );
 
   }
 
 }
 
-function panicAlert() {
 
-  alert("🚨 PANIC ALERT SENT 🚨");
+/* -------------------------
+   DASHBOARD WARNING
+------------------------- */
 
-  addEvent("🚨 PANIC ALERT ACTIVATED");
+function sendWarning() {
+
+  if (connection && connection.open) {
+
+    connection.send({
+      type: "warning"
+    });
+
+    alert(
+      "⚠️ ALERT SENT TO PHONE"
+    );
+
+    addDashboardEvent(
+      "⚠️ Suspicious activity alert sent."
+    );
+
+  } else {
+
+    alert(
+      "Phone is not connected."
+    );
+
+  }
 
 }
 
-function suspiciousAlert() {
 
-  alert("⚠️ SUSPICIOUS ACTIVITY ALERT");
+/* -------------------------
+   DISCONNECT
+------------------------- */
 
-  addEvent("⚠️ Suspicious activity reported.");
+function disconnectPhone() {
+
+  if (connection) {
+
+    connection.close();
+
+    connection = null;
+
+  }
+
+  document.getElementById("remoteVideo").srcObject =
+    null;
+
+  document.getElementById("status").textContent =
+    "● Phone Disconnected";
+
+  addDashboardEvent(
+    "Phone disconnected."
+  );
 
 }
 
