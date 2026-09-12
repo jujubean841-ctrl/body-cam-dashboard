@@ -1,0 +1,263 @@
+index.html<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Body Cam Control</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #080b10;
+      color: white;
+    }
+
+    header {
+      background: #111720;
+      padding: 18px;
+      text-align: center;
+      border-bottom: 1px solid #303846;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .status {
+      margin-top: 8px;
+      color: #35e875;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .camera-box {
+      background: #000;
+      border: 2px solid #303846;
+      border-radius: 15px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 18px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .start {
+      background: #1fc866;
+      color: white;
+    }
+
+    .stop {
+      background: #444c59;
+      color: white;
+    }
+
+    .panic {
+      background: #e52b2b;
+      color: white;
+    }
+
+    .alert {
+      background: #e69b18;
+      color: white;
+    }
+
+    .log {
+      margin-top: 25px;
+      background: #111720;
+      border: 1px solid #303846;
+      border-radius: 15px;
+      padding: 18px;
+    }
+
+    .log h2 {
+      margin-top: 0;
+    }
+
+    .event {
+      padding: 10px;
+      border-bottom: 1px solid #303846;
+      font-size: 14px;
+    }
+
+    .event:last-child {
+      border-bottom: none;
+    }
+
+    @media (max-width: 600px) {
+      .buttons {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>🎥 BODY CAM CONTROL</h1>
+  <div class="status" id="status">● Camera Offline</div>
+</header>
+
+<main>
+
+  <div class="camera-box">
+    <video id="camera" autoplay playsinline></video>
+  </div>
+
+  <div class="buttons">
+
+    <button class="start" onclick="startCamera()">
+      📷 START BODY CAM
+    </button>
+
+    <button class="stop" onclick="stopCamera()">
+      ⏹ STOP CAMERA
+    </button>
+
+    <button class="panic" onclick="panicAlert()">
+      🚨 PANIC ALERT
+    </button>
+
+    <button class="alert" onclick="suspiciousAlert()">
+      ⚠️ SUSPICIOUS ACTIVITY
+    </button>
+
+  </div>
+
+  <div class="log">
+    <h2>Event Log</h2>
+    <div id="events">
+      <div class="event">System ready.</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+
+let stream = null;
+
+function addEvent(message) {
+  const events = document.getElementById("events");
+
+  const event = document.createElement("div");
+  event.className = "event";
+
+  const time = new Date().toLocaleTimeString();
+
+  event.textContent = time + " — " + message;
+
+  events.prepend(event);
+}
+
+async function startCamera() {
+
+  try {
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "environment"
+      },
+      audio: true
+    });
+
+    document.getElementById("camera").srcObject = stream;
+
+    document.getElementById("status").textContent =
+      "● BODY CAM ONLINE";
+
+    document.getElementById("status").style.color =
+      "#35e875";
+
+    addEvent("Body camera started.");
+
+  } catch (error) {
+
+    alert(
+      "Camera access was blocked. Please allow camera and microphone access."
+    );
+
+    addEvent("Camera permission denied.");
+
+  }
+}
+
+function stopCamera() {
+
+  if (stream) {
+
+    stream.getTracks().forEach(track => track.stop());
+
+    stream = null;
+
+    document.getElementById("camera").srcObject = null;
+
+    document.getElementById("status").textContent =
+      "● Camera Offline";
+
+    document.getElementById("status").style.color =
+      "#ff5555";
+
+    addEvent("Body camera stopped.");
+
+  }
+
+}
+
+function panicAlert() {
+
+  alert("🚨 PANIC ALERT SENT 🚨");
+
+  addEvent("🚨 PANIC ALERT ACTIVATED");
+
+}
+
+function suspiciousAlert() {
+
+  alert("⚠️ SUSPICIOUS ACTIVITY ALERT");
+
+  addEvent("⚠️ Suspicious activity reported.");
+
+}
+
+</script>
+
+</body>
+</html>
