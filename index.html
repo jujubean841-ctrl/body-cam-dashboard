@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,11 +83,6 @@
 
     .orange {
       background: #e69b18;
-      color: white;
-    }
-
-    .blue {
-      background: #2878e8;
       color: white;
     }
 
@@ -648,7 +644,6 @@ function panicAlert() {
 
   }
 
-
   if (!navigator.geolocation) {
 
     alert(
@@ -659,11 +654,9 @@ function panicAlert() {
 
   }
 
-
   addPhoneEvent(
     "🚨 Panic pressed. Getting location..."
   );
-
 
   navigator.geolocation.getCurrentPosition(
 
@@ -675,7 +668,6 @@ function panicAlert() {
       const longitude =
         position.coords.longitude;
 
-
       connection.send({
 
         type: "panic",
@@ -686,11 +678,9 @@ function panicAlert() {
 
       });
 
-
       alert(
         "🚨 PANIC ALERT SENT TO MAC\n📍 Location sent."
       );
-
 
       addPhoneEvent(
         "🚨 PANIC ALERT SENT WITH LOCATION"
@@ -702,7 +692,6 @@ function panicAlert() {
 
       console.log(error);
 
-
       connection.send({
 
         type: "panic",
@@ -713,11 +702,9 @@ function panicAlert() {
 
       });
 
-
       alert(
         "🚨 PANIC ALERT SENT\n⚠️ Location could not be obtained."
       );
-
 
       addPhoneEvent(
         "🚨 PANIC ALERT SENT — LOCATION UNAVAILABLE"
@@ -726,13 +713,9 @@ function panicAlert() {
     },
 
     {
-
       enableHighAccuracy: true,
-
       timeout: 10000,
-
       maximumAge: 0
-
     }
 
   );
@@ -754,11 +737,9 @@ function sendWarning() {
 
     });
 
-
     alert(
       "⚠️ ALERT SENT TO PHONE"
     );
-
 
     addDashboardEvent(
       "⚠️ Suspicious activity alert sent."
@@ -789,14 +770,11 @@ function disconnectPhone() {
 
   }
 
-
   document.getElementById("remoteVideo").srcObject =
     null;
 
-
   document.getElementById("status").textContent =
     "● Phone Disconnected";
-
 
   addDashboardEvent(
     "Phone disconnected."
@@ -808,3 +786,4 @@ function disconnectPhone() {
 
 </body>
 </html>
+```
